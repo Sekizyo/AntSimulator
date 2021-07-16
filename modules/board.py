@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 import pygame
-from PIL import Image, ImageDraw
+from PIL import Image
 from scipy.ndimage.interpolation import zoom
 
 from modules.colors import colors
@@ -24,14 +24,14 @@ class Board():
     def generateBoard(self):
         np.set_printoptions(threshold=sys.maxsize)
 
-        arr = np.random.uniform(size=(16, 20))
-        arr = zoom(arr, 64)
+        arr = np.random.uniform(size=(8, 10))
+        arr = zoom(arr, 128)
         arr = arr > 0.5
         arr = np.where(arr, 0, 1)
         arr = np.array(arr)
 
         new_img = Image.new('RGB', (self.width, self.height), colors['black'])
-        d = ImageDraw.Draw(new_img)
+
         for y, listY in enumerate(arr):
             for x, value in enumerate(listY):
                 if value == 0:
@@ -41,6 +41,9 @@ class Board():
         
         new_img.save("modules/images/map.png")
         self.image = self.loadMap()
+
+    def createFood(self):
+        pass
 
     def draw(self):
         self.surface.blit(self.image, (self.x, self.y))
