@@ -15,15 +15,19 @@ class Gui():
 
         self.font = self.window.font
         self.icon_size = (48, 48)
-        self.margin = 30
+        self.margin = 40
     
-    def draw(self):
+    def draw(self, antCount, foodCount):
         self.drawBackground()
-        self.drawStats()
+        self.drawStats(antCount, foodCount)
         
     def drawBackground(self):
         pygame.draw.rect(self.surface, colors['black'], (self.x, self.y, self.width, self.height))
 
-    def drawStats(self, ants=0):
+    def drawStats(self, ants=0, food=0):
         antsText = self.font.render(f'Ants: {ants}', False, colors['white'])
+        
+        foodText = self.font.render(f'Food: {food}', False, colors['white'])
+
         self.surface.blit(antsText, (self.x+self.margin, self.y+self.margin))
+        self.surface.blit(foodText, (self.x+self.margin, self.y+self.margin*2))

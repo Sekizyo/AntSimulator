@@ -28,7 +28,7 @@ class Game():
     def draw(self):
         self.surface.fill(colors['background'])
 
-        self.gui.draw()
+        self.gui.draw(self.nest.antCount, self.foodManager.getFoodCount())
         self.board.draw()
         self.nest.draw()
         self.foodManager.draw()
@@ -58,12 +58,14 @@ class Game():
     def keyboardControls(self, event):
         if event.key == pygame.K_LSHIFT: self.running = False 
         if event.key == pygame.K_LCTRL: self.board.generateBoard() 
+        if event.key == pygame.K_SPACE: self.nest.releaseAnts() 
 
 
     def run(self):
         while self.running:
             self.checkControls()
             self.draw()
+            self.nest.moveAnts()
             self.clock.tick(self.fps)
 
 def main():
