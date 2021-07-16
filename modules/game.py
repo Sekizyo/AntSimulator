@@ -5,6 +5,7 @@ from modules.window import Window
 from modules.gui import Gui
 from modules.board import Board
 from modules.nest import Nest
+from modules.food import FoodManager
 
 class Game():
     def __init__(self):
@@ -18,6 +19,7 @@ class Game():
         self.gui = Gui(self.window)
         self.board = Board(self.window, self.gui)
         self.nest = Nest(self.window)
+        self.foodManager = FoodManager(self.window)
 
         self.clock = pygame.time.Clock()
         self.gameSpeed = 100
@@ -29,6 +31,7 @@ class Game():
         self.gui.draw()
         self.board.draw()
         self.nest.draw()
+        self.foodManager.draw()
 
         pygame.display.update()
 
@@ -37,9 +40,25 @@ class Game():
             if event.type == pygame.QUIT:  # Check for exit button press
                 self.running = False
             
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LSHIFT: self.running = False 
-                if event.key == pygame.K_LCTRL: self.board.generateBoard() 
+            if event.type == pygame.KEYDOWN: self.keyboardControls(event)
+
+        self.mouseControls()
+
+    def mouseControls(self):
+        pressed = pygame.mouse.get_pressed()
+        mouseX, mouseY = pygame.mouse.get_pos()
+
+        if pressed[0]:
+            self.foodManager.createFood(mouseX, mouseY)
+
+        if pressed[1]:
+            self.nest.setPosition(mouseX, mouseY)
+
+
+    def keyboardControls(self, event):
+        if event.key == pygame.K_LSHIFT: self.running = False 
+        if event.key == pygame.K_LCTRL: self.board.generateBoard() 
+
 
     def run(self):
         while self.running:
