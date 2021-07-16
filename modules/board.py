@@ -8,7 +8,6 @@ from scipy.ndimage.interpolation import zoom
 
 from modules.colors import colors
 
-
 class Board():
     def __init__(self, window, gui):
         self.gui = gui
@@ -40,11 +39,11 @@ class Board():
                 else:
                     new_img.putpixel((x, y), 255)
         
-        new_img.save("modules/map.png")
+        new_img.save("modules/images/map.png")
         self.image = self.loadMap()
 
     def draw(self):
         self.surface.blit(self.image, (self.x, self.y))
 
     def loadMap(self):
-        return pygame.image.load('modules/map.png').convert_alpha()
+        return pygame.image.load('modules/images/map.png').convert_alpha()
