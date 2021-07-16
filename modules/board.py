@@ -26,7 +26,7 @@ class Board():
         np.set_printoptions(threshold=sys.maxsize)
 
         arr = np.random.uniform(size=(16, 20))
-        arr = zoom(arr, 70)
+        arr = zoom(arr, 64)
         arr = arr > 0.5
         arr = np.where(arr, 0, 1)
         arr = np.array(arr)
@@ -41,6 +41,7 @@ class Board():
                     new_img.putpixel((x, y), 255)
         
         new_img.save("modules/map.png")
+        self.image = self.loadMap()
 
     def draw(self):
         self.surface.blit(self.image, (self.x, self.y))

@@ -34,6 +34,7 @@ class Game():
             
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LSHIFT: self.running = False 
+                if event.key == pygame.K_LCTRL: self.board.generateBoard() 
 
     def run(self):
         while self.running:

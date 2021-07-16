@@ -3,3 +3,4 @@ include
 lib
 lib64
 modules/__pycache__
+modules/map.png
