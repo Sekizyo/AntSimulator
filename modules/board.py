@@ -20,12 +20,13 @@ class Board():
         self.height = self.window.height
 
         self.image = self.loadMap()
+        self.mask = pygame.mask.from_surface(self.image)
 
     def generateBoard(self):
         np.set_printoptions(threshold=sys.maxsize)
 
-        arr = np.random.uniform(size=(8, 10))
-        arr = zoom(arr, 128)
+        arr = np.random.uniform(size=(8, 12))
+        arr = zoom(arr, 132)
         arr = arr > 0.5
         arr = np.where(arr, 0, 1)
         arr = np.array(arr)
@@ -42,7 +43,7 @@ class Board():
         new_img.save("modules/images/map.png")
         self.image = self.loadMap()
 
-    def createFood(self):
+    def createFood(self): #TODO add automatic food and nets creationx`
         pass
 
     def draw(self):
