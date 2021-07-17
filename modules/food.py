@@ -6,7 +6,7 @@ class Food():
     def __init__(self, surface, x, y):
         self.x = x
         self.y = y
-        self.radius = 5
+        self.radius = 2
         self.radiusHalf = self.radius//2
 
     def draw(self, surface):

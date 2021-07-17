@@ -11,7 +11,7 @@ class Nest():
 
         self.x = 100
         self.y = 110
-        self.radius = 25
+        self.radius = 12
         self.radiusHalf = self.radius/2
 
         self.food = 0
@@ -21,7 +21,7 @@ class Nest():
         pygame.draw.circle(self.surface, colors['brown'], (self.x, self.y), self.radius)
         
         textFood = self.window.font.render(f'{self.food}', False, (0, 0, 0))
-        self.surface.blit(textFood,(self.x-self.radiusHalf+5, self.y-self.radiusHalf-2))
+        self.surface.blit(textFood,(self.x-self.radiusHalf+1, self.y-self.radiusHalf-2))
 
         self.antManager.draw()
 

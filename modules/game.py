@@ -14,8 +14,6 @@ class Game():
         self.window = Window()
         self.surface = self.window.surface
 
-        self.font = pygame.font.SysFont("arial.ttf", 75)
-
         self.gui = Gui(self.window)
         self.board = Board(self.window, self.gui)
         self.nest = Nest(self.window)
