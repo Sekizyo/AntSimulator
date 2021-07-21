@@ -55,8 +55,10 @@ class Game():
 
     def keyboardControls(self, event):
         if event.key == pygame.K_LSHIFT: self.running = False 
-        if event.key == pygame.K_LCTRL: self.board.generateBoard() 
-        if event.key == pygame.K_SPACE: self.nest.releaseAnts() 
+        if event.key == pygame.K_SPACE: self.nest.createAnts() 
+        if event.key == pygame.K_LCTRL: 
+            self.nest.clearAll()
+            self.board.generateBoard() 
 
 
     def run(self):

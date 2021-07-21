@@ -29,9 +29,12 @@ class Nest():
     def setPosition(self, x, y):
         self.x, self.y = x, y
 
-    def releaseAnts(self):
+    def createAnts(self):
         for i in range(self.antCount):
             self.antManager.createAnt(self.x, self.y)
+
+    def clearAll(self):
+        self.antManager.clearAll()
 
     def moveAnts(self):
         self.antManager.moveAnts()
