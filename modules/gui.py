@@ -8,7 +8,7 @@ class Gui():
         self.surface = self.window.surface
 
         self.width = 300
-        self.height = 1280
+        self.height = 1080
 
         self.x = self.window.width - self.width
         self.y = 0
