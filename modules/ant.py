@@ -4,20 +4,16 @@ import math
 
 from modules.colors import colors
 
+DEBUG = True
+
 class Sensor():
-    def __init__(self, x, y, id_, antRadius):
+    def __init__(self, x, y, id_):
         self.x = x
         self.y = y
-
-        self.scale = 2
-        self.antRadius = antRadius
-        self.radius = self.antRadius * self.scale
-
         self.offset = self.setOffsetByID(id_)
-        self.strenght = 0
 
-    def testDraw(self, surface):
-        rect = pygame.draw.circle(surface, colors['white'], (self.x+self.offset[0], self.y+self.offset[1]), self.radius)
+    def draw(self, surface):
+        pygame.draw.rect(surface, colors['white'], [self.x, self.y, 0, 0], 1)
 
     def setPosition(self, x, y):
         self.x, self.y = x, y
@@ -29,7 +25,7 @@ class Sensor():
         self.offset = (x, y)
 
     def setOffsetByID(self, id_):
-        distance = self.antRadius*self.scale
+        distance = 15
 
         if id_ == 0:
             return (-distance, -distance)
@@ -41,36 +37,74 @@ class Sensor():
     def detect(self):
         pass
 
+class Trail():
+    def __init__(self, x, y, type_):
+        self.x = x
+        self.y = y
+
+        self.strenght = 1
+        self.type = type_
+
+        self.ttlDefault = 250
+        self.ttl = self.ttlDefault
+
+        self.drawFrameDefault = 10
+        self.drawFrame = self.drawFrameDefault
+
+    def draw(self, surface):
+        if self.drawFrame == self.drawFrameDefault:
+            if self.type:
+                pygame.draw.rect(surface, colors['searchingFood'], [self.x, self.y, 0, 0], self.strenght)
+            else:
+                pygame.draw.rect(surface, colors['foundFood'], [self.x, self.y, 0, 0], self.strenght)
+
+        self.ttl -= 1
+        self.drawFrame -= 1
+
+        if self.drawFrame <= 0: self.resetDrawFrame()
+
+    def resetTtl(self):
+        self.drawFrame = self.drawFrameDefault
+    
+    def resetDrawFrame(self):
+        self.drawFrame = self.drawFrameDefault
+
+    def addStrenght(self):
+        self.strenght += 1
+        self.resetTtl()
+        self.resetDrawFrame()
+            
 class Ant(Sensor):
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
-        self.radius = 2
+        self.radius = 4
 
         self.angle = 0
         self.rotationSpeed = 15
         self.speed = 0.50
-        self.distanceMax = 250
+        self.distanceMax = 150
 
-        self.tslthDefault = 120
-        self.tslth = self.tslthDefault # Time since last target hit
+        self.tslthDefault = 120 # Time since last target hit
+        self.tslth = self.tslthDefault
 
         self.targetPos = self.createTarget()
         self.steps = self.getSteps()
 
         self.searching = True
-        self.sensors = [Sensor(self.x, self.y, 0, self.radius), Sensor(self.x, self.y, 1, self.radius), Sensor(self.x, self.y, 2, self.radius)]
+        self.sensors = [Sensor(self.x, self.y, 0), Sensor(self.x, self.y, 1), Sensor(self.x, self.y, 2)]
 
     def draw(self, surface):
         pygame.draw.circle(surface, colors['grey'], (self.x, self.y), self.radius)
 
-        for sensor in self.sensors:
-            sensor.testDraw(surface)
+        if DEBUG: 
+            for sensor in self.sensors:
+                sensor.draw(surface)
 
-        self.testDrawTarget(surface)
+            self.drawTarget(surface)
 
-    def testDrawTarget(self, surface): #TODO DELETE
+    def drawTarget(self, surface):
         pygame.draw.circle(surface, colors['yellow'], self.targetPos, 5)
         pygame.draw.line(surface, colors['yellow'], (self.x, self.y), self.targetPos, 1)
 
@@ -112,6 +146,13 @@ class Ant(Sensor):
         self.speed = random.random()
         self.tslth = self.tslthDefault
 
+    def checkSensors(self):
+        return True
+        for sensor in self.sensors:
+            state = sensor.detect()
+            
+            if state: return state
+
     def move(self):
         self.searching = self.checkSensors()
 
@@ -129,13 +170,22 @@ class AntManager(Ant):
         self.window = window
         self.surface = self.window.surface
         self.antList = []
+        self.trailList = []
 
     def createAnt(self, x, y):
         self.antList.append(Ant(x, y))
 
+    def createTrail(self, x, y, type_):
+        self.trailList.append(Trail(x, y, type_))
+
     def draw(self):
         for ant in self.antList:
             ant.draw(self.surface)
+
+        for trail in self.trailList:
+            trail.draw(self.surface)
+            if trail.ttl <= 0:
+                self.trailList.remove(trail)
 
     def clearAll(self):
         self.clearAnts()
@@ -150,5 +200,5 @@ class AntManager(Ant):
     def moveAnts(self):
         for ant in self.antList:
             ant.move()
-
+            self.createTrail(ant.x, ant.y, ant.searching)
 

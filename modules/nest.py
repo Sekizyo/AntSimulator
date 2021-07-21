@@ -9,8 +9,8 @@ class Nest():
         self.surface = self.window.surface
         self.antManager = AntManager(self.window)
 
-        self.x = 100
-        self.y = 110
+        self.x = (self.window.width-300)//2
+        self.y = self.window.height//2
         self.radius = 12
         self.radiusHalf = self.radius/2
 
