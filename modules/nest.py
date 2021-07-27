@@ -15,7 +15,8 @@ class Nest():
         self.radiusHalf = self.radius/2
 
         self.food = 0
-        self.antCount = 30
+        self.antsLiving = 0
+        self.antSpawnCout = 30
 
     def draw(self):
         pygame.draw.circle(self.surface, colors['brown'], (self.x, self.y), self.radius)
@@ -29,8 +30,12 @@ class Nest():
         self.x, self.y = x, y
 
     def createAnts(self):
-        for i in range(self.antCount):
+        for i in range(self.antSpawnCout):
             self.antManager.createAnt(self.x, self.y)
+
+    def getAntLivingCount(self):
+        self.antsLiving = len(self.antManager.antList)
+        return self.antsLiving
 
     def clearAll(self):
         self.antManager.clearAll()

@@ -26,7 +26,7 @@ class Game():
     def draw(self):
         self.surface.fill(colors['background'])
 
-        self.gui.draw(self.nest.antCount, self.foodManager.getFoodCount(), self.clock.get_fps())
+        self.gui.draw(self.nest.getAntLivingCount(), self.foodManager.getFoodCount(), self.clock.get_fps())
         self.board.draw()
         self.nest.draw()
         self.foodManager.draw()
