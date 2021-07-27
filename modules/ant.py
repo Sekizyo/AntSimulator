@@ -81,10 +81,10 @@ class Ant(Sensor):
 
         self.radius = 4
 
-        self.angle = 0
-        self.rotationSpeed = 15
+        self.rotationMax = 1
         self.speed = 0.50
         self.distanceMax = 50
+        self.lastDirection = 0
 
         self.tslthDefault = 120 # Time since last target hit
         self.board = board
@@ -124,7 +124,10 @@ class Ant(Sensor):
 
     def createTarget(self):
         target = (0, 0)
-        direction = random.randint(0 , 3)
+        
+        direction = random.randint(abs(self.lastDirection - self.rotationMax), 3)
+        self.lastDirection = direction
+
         distanceX = random.randint(0, self.distanceMax)
         distanceY = random.randint(0, self.distanceMax)
 
@@ -185,6 +188,7 @@ class Ant(Sensor):
             pass
 
         self.checkColission()
+
 class AntManager(Ant):
     def __init__(self, window, board):
         self.window = window
@@ -205,10 +209,11 @@ class AntManager(Ant):
         for ant in self.antList:
             ant.draw(self.surface)
 
-        for trail in self.trailList:
-            trail.draw(self.surface)
-            if trail.ttl <= 0:
-                self.trailList.remove(trail)
+        # for trail in self.trailList:
+        #     if trail.ttl <= 0:
+        #         self.trailList.remove(trail)
+        #     else:
+        #         trail.draw(self.surface)
 
     def clearAll(self):
         self.clearAnts()
