@@ -148,10 +148,12 @@ class Ant(Sensor):
     def checkTargetColision(self, target):
         if self.board.mask.overlap(self.targetMask, (int(target[0]), int(target[1]))):
             return self.createTarget()
-        elif self.board.mask.overlap(self.antMask, (int(self.x), int(self.y))):
-            return self.createTarget()
         else:
             return target
+    
+    def checkColission(self):
+        if self.board.mask.overlap(self.antMask, (int(self.x), int(self.y))): 
+            self.newTarget()
 
     def getSteps(self):
         dx, dy = (self.targetPos[0] - self.x, self.targetPos[1] - self.y)
@@ -182,6 +184,7 @@ class Ant(Sensor):
         else:
             pass
 
+        self.checkColission()
 class AntManager(Ant):
     def __init__(self, window, board):
         self.window = window
