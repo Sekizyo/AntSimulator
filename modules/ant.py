@@ -48,9 +48,6 @@ class Trail():
         self.ttlDefault = 250
         self.ttl = self.ttlDefault
 
-        self.drawFrameDefault = 10
-        self.drawFrame = self.drawFrameDefault
-
     def draw(self, surface):
         if self.drawFrame == self.drawFrameDefault:
             if self.type:
@@ -81,12 +78,11 @@ class Ant(Sensor):
 
         self.radius = 4
 
-        self.rotationMax = 1
         self.speed = 0.50
-        self.distanceMax = 50
+        self.distanceMax = 20
         self.lastDirection = 0
 
-        self.tslthDefault = 120 # Time since last target hit
+        self.tslthDefault = 100 # Time since last target hit
         self.board = board
 
         self.antImage = antImage
@@ -95,6 +91,7 @@ class Ant(Sensor):
         self.targetImage = targetImage
         self.targetMask = pygame.mask.from_surface(self.targetImage)
 
+        self.targetCreationTry = 1
         self.targetPos = self.createTarget()
         self.steps = self.getSteps()
 
@@ -123,13 +120,16 @@ class Ant(Sensor):
             sensor.setPosition(self.x, self.y)
 
     def createTarget(self):
+        self.targetCreationTry += 1
         target = (0, 0)
         
-        direction = random.randint(abs(self.lastDirection - self.rotationMax), 3)
+        direction = random.randint(abs(self.lastDirection - random.randint(0, 3)), 3)
         self.lastDirection = direction
 
-        distanceX = random.randint(0, self.distanceMax)
-        distanceY = random.randint(0, self.distanceMax)
+        distanceMax = self.distanceMax * (self.targetCreationTry/2)
+
+        distanceX = random.randint(0, distanceMax)
+        distanceY = random.randint(0, distanceMax)
 
         if direction == 0:
             target = (self.x + distanceX, self.y + distanceY)
@@ -146,6 +146,8 @@ class Ant(Sensor):
             target = self.createTarget()
 
         target = self.checkTargetColision(target)
+
+        self.targetCreationTry = 1
         return target
 
     def checkTargetColision(self, target):
@@ -165,7 +167,7 @@ class Ant(Sensor):
     def newTarget(self):
         self.targetPos = self.createTarget()
         self.steps = self.getSteps()
-        self.speed = random.random() + 0.50
+        self.speed = random.random() + 0.25
         self.tslth = self.tslthDefault
 
     def checkSensors(self):
@@ -189,13 +191,15 @@ class Ant(Sensor):
 
         self.checkColission()
 
-class AntManager(Ant):
+class AntManager(Ant, Trail):
     def __init__(self, window, board):
         self.window = window
         self.surface = self.window.surface
         self.board = board
+
         self.antList = []
         self.trailList = []
+
         self.antImage = self.loadAntImage()
         self.dotImage = self.loadDotImage()
 
