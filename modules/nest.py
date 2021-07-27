@@ -4,10 +4,10 @@ from modules.colors import colors
 from modules.ant import AntManager
 
 class Nest():
-    def __init__(self, window):
+    def __init__(self, window, board):
         self.window = window
         self.surface = self.window.surface
-        self.antManager = AntManager(self.window)
+        self.antManager = AntManager(self.window, board)
 
         self.x = (self.window.width-300)//2
         self.y = self.window.height//2
@@ -24,7 +24,6 @@ class Nest():
         self.surface.blit(textFood,(self.x-self.radiusHalf+1, self.y-self.radiusHalf-2))
 
         self.antManager.draw()
-
 
     def setPosition(self, x, y):
         self.x, self.y = x, y

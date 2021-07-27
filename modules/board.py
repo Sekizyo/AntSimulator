@@ -36,12 +36,12 @@ class Board():
         for y, listY in enumerate(arr):
             for x, value in enumerate(listY):
                 if value == 0:
-                    new_img.putpixel((x, y), 0)
+                    new_img.putpixel((x, y), colors['transparent'])
                 else:
-                    new_img.putpixel((x, y), 255)
+                    new_img.putpixel((x, y), 150)
         
         new_img.save("modules/images/map.png")
-        self.image = self.loadMap()
+        self.loadMap()
 
     def createFood(self): #TODO add automatic food and nets creationx`
         pass
@@ -50,4 +50,7 @@ class Board():
         self.surface.blit(self.image, (self.x, self.y))
 
     def loadMap(self):
-        return pygame.image.load('modules/images/map.png').convert_alpha()
+        self.image = pygame.image.load('modules/images/map.png').convert_alpha()
+        self.mask = pygame.mask.from_surface(self.image)
+
+        return self.image

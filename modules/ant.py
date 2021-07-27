@@ -13,7 +13,7 @@ class Sensor():
         self.offset = self.setOffsetByID(id_)
 
     def draw(self, surface):
-        pygame.draw.rect(surface, colors['white'], [self.x, self.y, 0, 0], 1)
+        pygame.draw.rect(surface, colors['white'], [self.x, self.y, 0, 0], 5)
 
     def setPosition(self, x, y):
         self.x, self.y = x, y
@@ -25,7 +25,7 @@ class Sensor():
         self.offset = (x, y)
 
     def setOffsetByID(self, id_):
-        distance = 15
+        distance = 15 
 
         if id_ == 0:
             return (-distance, -distance)
@@ -75,7 +75,7 @@ class Trail():
         self.resetDrawFrame()
             
 class Ant(Sensor):
-    def __init__(self, x, y):
+    def __init__(self, x, y, board, antImage, targetImage):
         self.x = x
         self.y = y
 
@@ -84,28 +84,36 @@ class Ant(Sensor):
         self.angle = 0
         self.rotationSpeed = 15
         self.speed = 0.50
-        self.distanceMax = 150
+        self.distanceMax = 50
 
         self.tslthDefault = 120 # Time since last target hit
-        self.tslth = self.tslthDefault
+        self.board = board
+
+        self.antImage = antImage
+        self.antMask = pygame.mask.from_surface(self.antImage)
+
+        self.targetImage = targetImage
+        self.targetMask = pygame.mask.from_surface(self.targetImage)
 
         self.targetPos = self.createTarget()
         self.steps = self.getSteps()
+
+        self.tslth = self.tslthDefault
 
         self.searching = True
         self.sensors = [Sensor(self.x, self.y, 0), Sensor(self.x, self.y, 1), Sensor(self.x, self.y, 2)]
 
     def draw(self, surface):
-        pygame.draw.circle(surface, colors['grey'], (self.x, self.y), self.radius)
+        surface.blit(self.antImage, (self.x, self.y))
 
         if DEBUG: 
-            for sensor in self.sensors:
-                sensor.draw(surface)
+            # for sensor in self.sensors:
+            #     sensor.draw(surface)
 
             self.drawTarget(surface)
 
     def drawTarget(self, surface):
-        pygame.draw.circle(surface, colors['yellow'], self.targetPos, 5)
+        surface.blit(self.targetImage, self.targetPos)
         pygame.draw.line(surface, colors['yellow'], (self.x, self.y), self.targetPos, 1)
 
     def setPosition(self, x, y):
@@ -120,7 +128,6 @@ class Ant(Sensor):
         distanceX = random.randint(0, self.distanceMax)
         distanceY = random.randint(0, self.distanceMax)
 
-
         if direction == 0:
             target = (self.x + distanceX, self.y + distanceY)
         elif direction == 1:
@@ -130,11 +137,21 @@ class Ant(Sensor):
         elif direction == 3:
             target = (self.x - distanceX, self.y + distanceY)
 
-        if target[0] <= 0 or target[1] <= 0:
+        if target[0] <= 0 or target[1] <= 0: # Check borders
             target = self.createTarget()
         elif target[0] >= 1620 or target[1] >= 1080:
             target = self.createTarget()
+
+        target = self.checkTargetColision(target)
         return target
+
+    def checkTargetColision(self, target):
+        if self.board.mask.overlap(self.targetMask, (int(target[0]), int(target[1]))):
+            return self.createTarget()
+        elif self.board.mask.overlap(self.antMask, (int(self.x), int(self.y))):
+            return self.createTarget()
+        else:
+            return target
 
     def getSteps(self):
         dx, dy = (self.targetPos[0] - self.x, self.targetPos[1] - self.y)
@@ -143,7 +160,7 @@ class Ant(Sensor):
     def newTarget(self):
         self.targetPos = self.createTarget()
         self.steps = self.getSteps()
-        self.speed = random.random()
+        self.speed = random.random() + 0.50
         self.tslth = self.tslthDefault
 
     def checkSensors(self):
@@ -166,14 +183,17 @@ class Ant(Sensor):
             pass
 
 class AntManager(Ant):
-    def __init__(self, window):
+    def __init__(self, window, board):
         self.window = window
         self.surface = self.window.surface
+        self.board = board
         self.antList = []
         self.trailList = []
+        self.antImage = self.loadAntImage()
+        self.dotImage = self.loadDotImage()
 
     def createAnt(self, x, y):
-        self.antList.append(Ant(x, y))
+        self.antList.append(Ant(x, y, self.board, self.antImage, self.dotImage))
 
     def createTrail(self, x, y, type_):
         self.trailList.append(Trail(x, y, type_))
@@ -202,3 +222,8 @@ class AntManager(Ant):
             ant.move()
             self.createTrail(ant.x, ant.y, ant.searching)
 
+    def loadAntImage(self):
+        return pygame.image.load('modules/images/ant.png').convert_alpha()
+
+    def loadDotImage(self):
+        return pygame.image.load('modules/images/dot.png').convert_alpha()
