@@ -16,7 +16,7 @@ class Game():
 
         self.gui = Gui(self.window)
         self.board = Board(self.window, self.gui)
-        self.nest = Nest(self.window)
+        self.nest = Nest(self.window, self.board)
         self.foodManager = FoodManager(self.window)
 
         self.clock = pygame.time.Clock()
@@ -26,7 +26,7 @@ class Game():
     def draw(self):
         self.surface.fill(colors['background'])
 
-        self.gui.draw(self.nest.antCount, self.foodManager.getFoodCount())
+        self.gui.draw(self.nest.antCount, self.foodManager.getFoodCount(), self.clock.get_fps())
         self.board.draw()
         self.nest.draw()
         self.foodManager.draw()
