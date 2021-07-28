@@ -41,6 +41,9 @@ class Nest():
         self.foodDots = len(self.antManager.foodList)
         return (self.antsLiving, self.trailDots, self.foodDots)
 
+    def restart(self):
+        self.antManager = AntManager(self.window, board)
+
     def clearAll(self):
         self.antManager.clearAll()
 
