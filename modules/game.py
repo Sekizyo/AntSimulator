@@ -5,7 +5,6 @@ from modules.window import Window
 from modules.gui import Gui
 from modules.board import Board
 from modules.nest import Nest
-from modules.food import FoodManager
 
 class Game():
     def __init__(self, DEBUG):
@@ -18,7 +17,6 @@ class Game():
         self.gui = Gui(self.window)
         self.board = Board(self.window, self.gui)
         self.nest = Nest(self.window, self.board)
-        self.foodManager = FoodManager(self.window)
 
         self.clock = pygame.time.Clock()
         self.gameSpeed = 100
@@ -27,10 +25,9 @@ class Game():
     def draw(self):
         self.surface.fill(colors['background'])
 
-        self.gui.draw(self.nest.getAntLivingCount(), self.foodManager.getFoodCount(), self.clock.get_fps())
+        self.gui.draw(self.nest.getStats(), self.clock.get_fps())
         self.board.draw()
         self.nest.draw()
-        self.foodManager.draw()
 
         pygame.display.update()
 
@@ -48,11 +45,10 @@ class Game():
         mouseX, mouseY = pygame.mouse.get_pos()
 
         if pressed[0]:
-            self.foodManager.createFood(mouseX, mouseY)
+            self.nest.antManager.createFood(mouseX, mouseY)
 
         if pressed[1]:
             self.nest.setPosition(mouseX, mouseY)
-
 
     def keyboardControls(self, event):
         if event.key == pygame.K_LSHIFT: self.running = False 
@@ -60,7 +56,6 @@ class Game():
         if event.key == pygame.K_LCTRL: 
             self.nest.clearAll()
             self.board.generateBoard() 
-
 
     def run(self):
         if self.DEBUG:

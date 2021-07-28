@@ -13,6 +13,7 @@ class AntManager():
         self.board = board
 
         self.antList = []
+        self.foodList = []
         self.trailList = []
 
         self.antImage = self.loadAntImage()
@@ -23,6 +24,9 @@ class AntManager():
 
     def createAnt(self, x, y):
         self.antList.append(Ant(x, y, self.window, self.board))
+
+    def createFood(self, x, y):
+        self.foodList.append(Food(x, y, self.window, self.board))
 
     def createTrail(self, x, y, type_):
         self.trailList.append(Trail(x, y, type_, self.window, self.board))
@@ -35,6 +39,9 @@ class AntManager():
         for trail in self.trailList:
             trail.draw()
             self.manageTrailDeletion(trail)
+
+        for food in self.foodList:
+            food.draw()
 
     def manageTrailCreation(self, ant):
         if ant.lastTrailDrop <= 0:
@@ -162,11 +169,8 @@ class Ant(AntManager):
         self.tslth = self.tslthDefault
 
     def checkSensors(self):
+        target = self.sensor.detect(self.searching, self.foodList, self.trailList)
         return True
-        for sensor in self.sensors:
-            state = sensor.detect()
-            
-            if state: return state
 
     def move(self):
         self.searching = self.checkSensors()
@@ -179,7 +183,6 @@ class Ant(AntManager):
 
         self.checkColission()
         self.dropTrail()
-        self.sensor.detect(self.trailList)
 
     def dropTrail(self):
         if self.lastTrailDrop <= 0:
@@ -218,11 +221,21 @@ class Sensor(Ant, AntManager):
         pygame.draw.rect(surface, colors['searchingFood'], self.rightSensor)
         pygame.draw.rect(surface, colors['searchingFood'], self.downSensor)
 
-    def detect(self, trailList):
+    def detect(self, searchingFood, foodList, trailList):
+        if searchingFood:
+            self.detectFood(foodList)
+        else:
+            self.detectTrail(trailList)
+
+    def detectFood(self, foodList):
+        for food in foodList:
+            if self.topSensor.colidetect(food):
+                print('##########')
+
+    def detectTrail(self, trailList):
         for trail in trailList:
             if self.topSensor.colidetect(trail):
                 print('##########')
-
 
 class Trail(AntManager):
     def __init__(self, x, y, type_, window, board):
@@ -251,3 +264,16 @@ class Trail(AntManager):
         self.strenght += 1
         self.resetTtl()
    
+class Food(AntManager):
+    def __init__(self, x, y, window, board):
+        super().__init__(window, board)
+        self.x = x
+        self.y = y
+        
+        self.radius = 2
+
+    def draw(self):
+        pygame.draw.circle(self.surface, colors['green'], (self.x, self.y), self.radius)
+
+    def setPosition(self, x, y):
+        self.x, self.y = x, y

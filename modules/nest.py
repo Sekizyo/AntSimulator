@@ -14,7 +14,8 @@ class Nest():
         self.radius = 12
         self.radiusHalf = self.radius/2
 
-        self.food = 0
+        self.foodDots = 0
+        self.score = 0
         self.antsLiving = 0
         self.trailDots = 0
         self.antSpawnCout = 1
@@ -22,7 +23,7 @@ class Nest():
     def draw(self):
         pygame.draw.circle(self.surface, colors['brown'], (self.x, self.y), self.radius)
         
-        textFood = self.window.font.render(f'{self.food}', False, (0, 0, 0))
+        textFood = self.window.font.render(f'{self.score}', False, (0, 0, 0))
         self.surface.blit(textFood,(self.x-self.radiusHalf+1, self.y-self.radiusHalf-2))
 
         self.antManager.draw()
@@ -34,10 +35,11 @@ class Nest():
         for i in range(self.antSpawnCout):
             self.antManager.createAnt(self.x, self.y)
 
-    def getAntLivingCount(self):
+    def getStats(self):
         self.antsLiving = len(self.antManager.antList)
         self.trailDots = len(self.antManager.trailList)
-        return (self.antsLiving, self.trailDots)
+        self.foodDots = len(self.antManager.foodList)
+        return (self.antsLiving, self.trailDots, self.foodDots)
 
     def clearAll(self):
         self.antManager.clearAll()

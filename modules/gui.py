@@ -17,9 +17,9 @@ class Gui():
         self.icon_size = (48, 48)
         self.margin = 40
     
-    def draw(self, antCount, foodCount, fps):
+    def draw(self, nestStats, fps):
         self.drawBackground()
-        self.drawStats(antCount[0], antCount[1], foodCount, fps)
+        self.drawStats(nestStats[0], nestStats[1], nestStats[2], fps)
         
     def drawBackground(self):
         pygame.draw.rect(self.surface, colors['black'], (self.x, self.y, self.width, self.height))
