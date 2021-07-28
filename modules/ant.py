@@ -107,7 +107,6 @@ class Ant(AntManager):
         
         direction = random.randint(0, 3)
         self.lastDirection = direction
-
         distance = self.distanceMax * (self.targetCreationTry/2)
 
         distanceX = random.randint(0, distance)
@@ -122,10 +121,7 @@ class Ant(AntManager):
         elif direction == 3:
             target = (self.x - distanceX, self.y + distanceY)
 
-        if target[0] <= 0 or target[1] <= 0: # Check borders
-            target = self.createTarget()
-        elif target[0] >= 1620 or target[1] >= 1080:
-            target = self.createTarget()
+        target = (int(target[0]), int(target[1]))
 
         target = self.checkTargetColision(target)
 
@@ -133,12 +129,22 @@ class Ant(AntManager):
         return target
 
     def checkTargetColision(self, target):
-        if self.board.mask.overlap(self.targetMask, (int(target[0]), int(target[1]))):
+        if target[0] <= 0 or target[1] <= 0: # Check borders
+            return self.createTarget()
+        elif target[0] >= 1620 or target[1] >= 1080:
+            return self.createTarget()
+
+        elif self.board.mask.overlap(self.targetMask, target):
             return self.createTarget()
         else:
             return target
     
     def checkColission(self):
+        if self.x <= 0 or self.y <= 0: # Check borders
+            self.newTarget()
+        elif self.x >= 1620 or self.y >= 1080:
+            self.newTarget()
+
         if self.board.mask.overlap(self.antMask, (int(self.x), int(self.y))): 
             self.newTarget()
 
