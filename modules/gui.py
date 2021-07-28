@@ -19,13 +19,15 @@ class Gui():
     
     def draw(self, antCount, foodCount, fps):
         self.drawBackground()
-        self.drawStats(antCount, foodCount, fps)
+        self.drawStats(antCount[0], antCount[1], foodCount, fps)
         
     def drawBackground(self):
         pygame.draw.rect(self.surface, colors['black'], (self.x, self.y, self.width, self.height))
 
-    def drawStats(self, ants=0, food=0, fps=0):
+    def drawStats(self, ants=0, trail=0, food=0, fps=0):
         antsText = self.font.render(f'Ants: {ants}', False, colors['white'])
+
+        trailText = self.font.render(f'Trail: {trail}', False, colors['white'])
         
         foodText = self.font.render(f'Food: {food}', False, colors['white'])
 
@@ -33,4 +35,5 @@ class Gui():
 
         self.surface.blit(fpsText, (self.x+self.margin, self.y+self.margin))
         self.surface.blit(antsText, (self.x+self.margin, self.y+self.margin*2))
-        self.surface.blit(foodText, (self.x+self.margin, self.y+self.margin*3))
+        self.surface.blit(trailText, (self.x+self.margin, self.y+self.margin*3))
+        self.surface.blit(foodText, (self.x+self.margin, self.y+self.margin*4))

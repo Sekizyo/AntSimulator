@@ -16,6 +16,7 @@ class Nest():
 
         self.food = 0
         self.antsLiving = 0
+        self.trailDots = 0
         self.antSpawnCout = 1000
 
     def draw(self):
@@ -35,7 +36,8 @@ class Nest():
 
     def getAntLivingCount(self):
         self.antsLiving = len(self.antManager.antList)
-        return self.antsLiving
+        self.trailDots = len(self.antManager.trailList)
+        return (self.antsLiving, self.trailDots)
 
     def clearAll(self):
         self.antManager.clearAll()
