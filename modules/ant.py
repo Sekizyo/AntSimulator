@@ -37,11 +37,18 @@ class AntManager():
             self.manageTrailCreation(ant)
 
         for trail in self.trailList:
-            trail.draw()
+            if DEBUG:
+                trail.draw()
             self.manageTrailDeletion(trail)
 
         for food in self.foodList:
             food.draw()
+            self.manageFoodDeletion(food)
+
+    def manageFoodDeletion(self, food):
+        if food.strenght >= 2:
+            print('##########')
+            self.foodList.remove(food)
 
     def manageTrailCreation(self, ant):
         if ant.lastTrailDrop <= 0:
@@ -63,7 +70,7 @@ class AntManager():
 
     def moveAnts(self):
         for ant in self.antList:
-            ant.move()
+            ant.move(self.foodList, self.trailList)
 
     def loadAntImage(self):
         return pygame.image.load('modules/images/ant.png').convert_alpha()
@@ -93,14 +100,15 @@ class Ant(AntManager):
         self.tslth = self.tslthDefault
 
         self.searching = True
+        self.pickedFood = False
         self.sensor = Sensor(self.x, self.y)
 
     def draw(self):
         self.surface.blit(self.antImage, (self.x, self.y))
-        self.sensor.draw(self.surface)
         
         if DEBUG: 
             self.drawTarget()
+            self.sensor.draw(self.surface)
 
     def drawTarget(self):
         self.surface.blit(self.targetImage, self.targetPos)
@@ -162,24 +170,33 @@ class Ant(AntManager):
         dx, dy = (self.targetPos[0] - self.x, self.targetPos[1] - self.y)
         return (dx / 60., dy / 60.)
 
-    def newTarget(self):
-        self.targetPos = self.createTarget()
+    def newTarget(self, target=False):
+        if target:
+            self.targetPos = target
+        else:
+            self.targetPos = self.createTarget()
+
         self.steps = self.getSteps()
         self.speed = random.random() + 0.25
         self.tslth = self.tslthDefault
 
-    def checkSensors(self):
-        target = self.sensor.detect(self.searching, self.foodList, self.trailList)
-        return True
+    def checkSensors(self, foodList, trailList):
+        target = self.sensor.detect(self.searching, foodList, trailList)
 
-    def move(self):
-        self.searching = self.checkSensors()
+        if type(target) == tuple:
+            self.newTarget(target)
+            self.pickedFood = True
+            self.searching = False
 
-        if self.searching:
-            self.setPosition(self.x + self.steps[0] * self.speed, self.y + self.steps[1] * self.speed)
-            if self.tslth <= 0: self.newTarget()
         else:
-            pass
+            self.searching = True
+            return target
+
+    def move(self, foodList, trailList):
+        self.checkSensors(foodList, trailList)
+
+        self.setPosition(self.x + self.steps[0] * self.speed, self.y + self.steps[1] * self.speed)
+        if self.tslth <= 0: self.newTarget()
 
         self.checkColission()
         self.dropTrail()
@@ -198,22 +215,17 @@ class Sensor(Ant, AntManager):
         self.offset = 2.5
         self.sizeHalf = self.size//2
 
-        self.topSensor = (0, 0, 0, 0)
-        self.leftSensor = (0, 0, 0, 0)
-        self.rightSensor = (0, 0, 0, 0)
-        self.downSensor = (0, 0, 0, 0)
+        self.topSensor = pygame.Rect((0, 0), (0, 0))
+        self.leftSensor = pygame.Rect((0, 0), (0, 0))
+        self.rightSensor = pygame.Rect((0, 0), (0, 0))
+        self.downSensor = pygame.Rect((0, 0), (0, 0))
         
-        self.topStrenght = 0
-        self.leftStrenght = 0
-        self.rightStrenght = 0
-        self.downStrenght = 0
-
     def setPosition(self, x, y):
         self.x, self.y = x, y
-        self.topSensor = (self.x-self.sizeHalf+self.offset, self.y-self.size-self.offset, self.size, self.size)
-        self.leftSensor = (self.x-self.size-self.offset, self.y-self.offset, self.size, self.size)
-        self.rightSensor = (self.x+self.size-self.offset, self.y-self.offset, self.size, self.size)
-        self.downSensor = (self.x-self.sizeHalf+self.offset, self.y+self.size-self.offset, self.size, self.size)
+        self.topSensor = pygame.Rect((self.x-self.sizeHalf+self.offset, self.y-self.size-self.offset), (self.size, self.size))
+        self.leftSensor = pygame.Rect((self.x-self.size-self.offset, self.y-self.offset), (self.size, self.size))
+        self.rightSensor = pygame.Rect((self.x+self.size-self.offset, self.y-self.offset), (self.size, self.size))
+        self.downSensor = pygame.Rect((self.x-self.sizeHalf+self.offset, self.y+self.size-self.offset), (self.size, self.size))
 
     def draw(self, surface):
         pygame.draw.rect(surface, colors['searchingFood'], self.topSensor)
@@ -223,19 +235,42 @@ class Sensor(Ant, AntManager):
 
     def detect(self, searchingFood, foodList, trailList):
         if searchingFood:
-            self.detectFood(foodList)
+            target = self.detectItem(foodList, True)
         else:
-            self.detectTrail(trailList)
+            target = self.detectItem(trailList)
 
-    def detectFood(self, foodList):
-        for food in foodList:
-            if self.topSensor.colidetect(food):
-                print('##########')
+        return target
 
-    def detectTrail(self, trailList):
-        for trail in trailList:
-            if self.topSensor.colidetect(trail):
-                print('##########')
+    def detectItem(self, itemList, food=False):
+        detectedItems = []
+        for item in itemList:
+            if self.topSensor.colliderect(item):
+                detectedItems.append(item)
+
+            elif self.leftSensor.colliderect(item):
+                detectedItems.append(item)
+
+            elif self.rightSensor.colliderect(item):
+                detectedItems.append(item)
+
+            elif self.downSensor.colliderect(item):
+                detectedItems.append(item)
+
+            if not food:
+                item.addStrenght()
+
+        if detectedItems:
+            strongest = detectedItems[0].strenght
+            stronghestItem = detectedItems[0]
+
+            for detected in detectedItems:
+                if detected.strenght >= strongest:
+                    strongestItem = detected
+                    strongest = strongestItem.strenght
+
+            return (strongestItem.x , strongestItem.y)
+        else:
+            return True
 
 class Trail(AntManager):
     def __init__(self, x, y, type_, window, board):
@@ -244,36 +279,53 @@ class Trail(AntManager):
         self.y = y
 
         self.strenght = 1
-        self.type = type_
 
-        self.ttlDefault = 150
+        self.interactionsDefault = 100
+        self.interactions = self.interactionsDefault
+
+        self.type = type_
+        self.ttlDefault = 1000
         self.ttl = self.ttlDefault
+
+        self.rect = pygame.Rect((self.x, self.y), (2, 2))
 
     def draw(self):
         if self.type:
-            pygame.draw.rect(self.surface, colors['searchingFood'], [self.x, self.y, 0, 0], self.strenght)
+            pygame.draw.rect(self.surface, colors['searchingFood'], self.rect)
         else:
-            pygame.draw.rect(self.surface, colors['foundFood'], [self.x, self.y, 0, 0], self.strenght)
+            pygame.draw.rect(self.surface, colors['foundFood'], self.rect)
 
         self.ttl -= 1
 
     def resetTtl(self):
-        self.ttl = self.ttleDefault
+        self.ttl = self.ttlDefault
 
     def addStrenght(self):
-        self.strenght += 1
-        self.resetTtl()
-   
+        if self.interactions <= 0:
+            self.interactions = self.interactionsDefault
+            self.strenght += 1
+            self.rect = pygame.Rect((self.x, self.y), (2, 2))
+            self.resetTtl()
+        else:
+            self.interactions -= 1
+
 class Food(AntManager):
     def __init__(self, x, y, window, board):
         super().__init__(window, board)
         self.x = x
         self.y = y
-        
-        self.radius = 2
+
+        self.strenght = 1
+
+        self.rect = pygame.Rect((self.x, self.y), (2, 2))
 
     def draw(self):
-        pygame.draw.circle(self.surface, colors['green'], (self.x, self.y), self.radius)
+        pygame.draw.rect(self.surface, colors['green'], self.rect)
 
     def setPosition(self, x, y):
         self.x, self.y = x, y
+        self.rect = pygame.Rect((self.x, self.y), (2, 2))
+
+    def addStrenght(self):
+        self.strenght += 1
+        del self

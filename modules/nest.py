@@ -9,8 +9,8 @@ class Nest():
         self.surface = self.window.surface
         self.antManager = AntManager(self.window, board)
 
-        self.x = (self.window.width-300)//2
-        self.y = self.window.height//2 - 300
+        self.nestX = (self.window.width-300)//2
+        self.nestY = self.window.height//2 - 300
         self.radius = 12
         self.radiusHalf = self.radius/2
 
@@ -21,19 +21,19 @@ class Nest():
         self.antSpawnCout = 1
 
     def draw(self):
-        pygame.draw.circle(self.surface, colors['brown'], (self.x, self.y), self.radius)
+        pygame.draw.circle(self.surface, colors['brown'], (self.nestX, self.nestY), self.radius)
         
         textFood = self.window.font.render(f'{self.score}', False, (0, 0, 0))
-        self.surface.blit(textFood,(self.x-self.radiusHalf+1, self.y-self.radiusHalf-2))
+        self.surface.blit(textFood,(self.nestX-self.radiusHalf+1, self.nestY-self.radiusHalf-2))
 
         self.antManager.draw()
 
     def setPosition(self, x, y):
-        self.x, self.y = x, y
+        self.nestX, self.nestY = x, y
 
     def createAnts(self):
         for i in range(self.antSpawnCout):
-            self.antManager.createAnt(self.x, self.y)
+            self.antManager.createAnt(self.nestX, self.nestY)
 
     def getStats(self):
         self.antsLiving = len(self.antManager.antList)
