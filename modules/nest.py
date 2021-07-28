@@ -17,7 +17,7 @@ class Nest():
         self.food = 0
         self.antsLiving = 0
         self.trailDots = 0
-        self.antSpawnCout = 1000
+        self.antSpawnCout = 1
 
     def draw(self):
         pygame.draw.circle(self.surface, colors['brown'], (self.x, self.y), self.radius)

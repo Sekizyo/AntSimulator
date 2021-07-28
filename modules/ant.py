@@ -4,7 +4,7 @@ import math
 
 from modules.colors import colors
 
-DEBUG = False
+DEBUG = True
 
 class AntManager():
     def __init__(self, window, board):
@@ -14,9 +14,6 @@ class AntManager():
 
         self.antList = []
         self.trailList = []
-
-        self.radius = 4
-        self.distanceMax = 50
 
         self.antImage = self.loadAntImage()
         self.antMask = pygame.mask.from_surface(self.antImage)
@@ -33,13 +30,19 @@ class AntManager():
     def draw(self):
         for ant in self.antList:
             ant.draw()
+            self.manageTrailCreation(ant)
 
-        if DEBUG:
-            for trail in self.trailList:
-                if trail.ttl <= 0:
-                    self.trailList.remove(trail)
-                else:
-                    trail.draw()
+        for trail in self.trailList:
+            trail.draw()
+            self.manageTrailDeletion(trail)
+
+    def manageTrailCreation(self, ant):
+        if ant.lastTrailDrop <= 0:
+            self.createTrail(ant.x, ant.y, ant.searching)
+
+    def manageTrailDeletion(self, trail):
+        if trail.ttl <= 0:
+            self.trailList.remove(trail)
 
     def clearAll(self):
         self.clearAnts()
@@ -55,9 +58,6 @@ class AntManager():
         for ant in self.antList:
             ant.move()
 
-            if DEBUG:
-                self.createTrail(ant.x, ant.y, ant.searching)
-
     def loadAntImage(self):
         return pygame.image.load('modules/images/ant.png').convert_alpha()
 
@@ -71,7 +71,11 @@ class Ant(AntManager):
         self.y = y
 
         self.speed = 0.50
+        self.distanceMax = 50
         self.lastDirection = 0
+
+        self.lastTrailDropDefault = 20
+        self.lastTrailDrop = 0
 
         self.tslthDefault = random.randint(50, 150) # Time since last target hit
 
@@ -82,15 +86,13 @@ class Ant(AntManager):
         self.tslth = self.tslthDefault
 
         self.searching = True
-        self.sensors = [Sensor(), Sensor(), Sensor()]
+        self.sensor = Sensor(self.x, self.y)
 
     def draw(self):
         self.surface.blit(self.antImage, (self.x, self.y))
-
+        self.sensor.draw(self.surface)
+        
         if DEBUG: 
-            # for sensor in self.sensors:
-            #     sensor.draw()
-
             self.drawTarget()
 
     def drawTarget(self):
@@ -100,6 +102,7 @@ class Ant(AntManager):
     def setPosition(self, x, y):
         self.x, self.y = x, y
         self.tslth -= 1
+        self.sensor.setPosition(x, y)
 
     def createTarget(self):
         self.targetCreationTry += 1
@@ -175,16 +178,51 @@ class Ant(AntManager):
             pass
 
         self.checkColission()
+        self.dropTrail()
+        self.sensor.detect(self.trailList)
 
-class Sensor():
-    def __init__(self):
-        super().__init__()
+    def dropTrail(self):
+        if self.lastTrailDrop <= 0:
+            self.lastTrailDrop = self.lastTrailDropDefault
+        else:
+            self.lastTrailDrop -= 1
+        
+class Sensor(Ant, AntManager):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.size = 10
+        self.offset = 2.5
+        self.sizeHalf = self.size//2
 
-    def draw(self):
-        pygame.draw.rect(self.surface, colors['white'], [self.x, self.y, 0, 0], 5)
+        self.topSensor = (0, 0, 0, 0)
+        self.leftSensor = (0, 0, 0, 0)
+        self.rightSensor = (0, 0, 0, 0)
+        self.downSensor = (0, 0, 0, 0)
+        
+        self.topStrenght = 0
+        self.leftStrenght = 0
+        self.rightStrenght = 0
+        self.downStrenght = 0
 
-    def detect(self):
-        pass
+    def setPosition(self, x, y):
+        self.x, self.y = x, y
+        self.topSensor = (self.x-self.sizeHalf+self.offset, self.y-self.size-self.offset, self.size, self.size)
+        self.leftSensor = (self.x-self.size-self.offset, self.y-self.offset, self.size, self.size)
+        self.rightSensor = (self.x+self.size-self.offset, self.y-self.offset, self.size, self.size)
+        self.downSensor = (self.x-self.sizeHalf+self.offset, self.y+self.size-self.offset, self.size, self.size)
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, colors['searchingFood'], self.topSensor)
+        pygame.draw.rect(surface, colors['searchingFood'], self.leftSensor)
+        pygame.draw.rect(surface, colors['searchingFood'], self.rightSensor)
+        pygame.draw.rect(surface, colors['searchingFood'], self.downSensor)
+
+    def detect(self, trailList):
+        for trail in trailList:
+            if self.topSensor.colidetect(trail):
+                print('##########')
+
 
 class Trail(AntManager):
     def __init__(self, x, y, type_, window, board):
@@ -195,7 +233,7 @@ class Trail(AntManager):
         self.strenght = 1
         self.type = type_
 
-        self.ttlDefault = 50
+        self.ttlDefault = 150
         self.ttl = self.ttlDefault
 
     def draw(self):
