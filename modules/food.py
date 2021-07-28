@@ -2,44 +2,39 @@ import pygame
 
 from modules.colors import colors
 
-class Food():
-    def __init__(self, surface, x, y):
-        self.x = x
-        self.y = y
-        self.radius = 2
-        self.radiusHalf = self.radius//2
-
-    def draw(self, surface):
-        pygame.draw.circle(surface, colors['green'], (self.x, self.y), self.radius)
-
-    def setPosition(self, x, y):
-        self.x, self.y = x, y
-
-class FoodManager(Food):
+class FoodManager():
     def __init__(self, window):
         self.window = window
         self.surface = self.window.surface
 
         self.foodList = []
 
-    def createFood(self, targetX, targetY):
-        self.foodList.append(Food(self.surface, targetX, targetY))
+    def createFood(self, x, y):
+        self.foodList.append(Food(x, y, self.window))
 
     def clearFood(self):
         self.foodList.clear()
 
     def getFoodCount(self):
         return len(self.foodList)
+    
+    def getFood(self):
+        return self.foodList()
 
     def draw(self):
         for food in self.foodList:
-            food.draw(self.surface)
+            food.draw()
 
-    def getFoodByPosition(self, x, y):
-        for food in self.foodList:
-            if food.x == x and food.y == y:
-                return food
+class Food(FoodManager):
+    def __init__(self, x, y, window):
+        super().__init__(window)
+        self.x = x
+        self.y = y
+        self.radius = 2
+        self.radiusHalf = self.radius//2
 
-    def moveFoodByPosition(self, mouseX, mouseY, targetX, targetY):
-        food = self.getFoodByPosition(mouseX, mouseY)
-        food.setPosition(targetX, targetY)
+    def draw(self):
+        pygame.draw.circle(self.surface, colors['green'], (self.x, self.y), self.radius)
+
+    def setPosition(self, x, y):
+        self.x, self.y = x, y
