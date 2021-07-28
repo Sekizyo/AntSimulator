@@ -6,90 +6,74 @@ from modules.colors import colors
 
 DEBUG = False
 
-class Sensor():
-    def __init__(self, x, y, id_):
-        self.x = x
-        self.y = y
-        self.offset = self.setOffsetByID(id_)
-
-    def draw(self, surface):
-        pygame.draw.rect(surface, colors['white'], [self.x, self.y, 0, 0], 5)
-
-    def setPosition(self, x, y):
-        self.x, self.y = x, y
-
-    def setDirestion(self):
-        pass
-
-    def setOffset(self, x, y):
-        self.offset = (x, y)
-
-    def setOffsetByID(self, id_):
-        distance = 15 
-
-        if id_ == 0:
-            return (-distance, -distance)
-        elif id_ == 1:
-            return (0, -distance*2)
-        elif id_ == 2:
-            return (distance, -distance)
-
-    def detect(self):
-        pass
-
-class Trail():
-    def __init__(self, x, y, type_):
-        self.x = x
-        self.y = y
-
-        self.strenght = 1
-        self.type = type_
-
-        self.ttlDefault = 250
-        self.ttl = self.ttlDefault
-
-    def draw(self, surface):
-        if self.drawFrame == self.drawFrameDefault:
-            if self.type:
-                pygame.draw.rect(surface, colors['searchingFood'], [self.x, self.y, 0, 0], self.strenght)
-            else:
-                pygame.draw.rect(surface, colors['foundFood'], [self.x, self.y, 0, 0], self.strenght)
-
-        self.ttl -= 1
-        self.drawFrame -= 1
-
-        if self.drawFrame <= 0: self.resetDrawFrame()
-
-    def resetTtl(self):
-        self.drawFrame = self.drawFrameDefault
-    
-    def resetDrawFrame(self):
-        self.drawFrame = self.drawFrameDefault
-
-    def addStrenght(self):
-        self.strenght += 1
-        self.resetTtl()
-        self.resetDrawFrame()
-            
-class Ant(Sensor):
-    def __init__(self, x, y, board, antImage, targetImage):
-        self.x = x
-        self.y = y
-
-        self.radius = 4
-
-        self.speed = 0.50
-        self.distanceMax = 20
-        self.lastDirection = 0
-
-        self.tslthDefault = 100 # Time since last target hit
+class AntManager():
+    def __init__(self, window, board):
+        self.window = window
+        self.surface = self.window.surface
         self.board = board
 
-        self.antImage = antImage
+        self.antList = []
+        self.trailList = []
+
+        self.radius = 4
+        self.distanceMax = 50
+
+        self.antImage = self.loadAntImage()
         self.antMask = pygame.mask.from_surface(self.antImage)
 
-        self.targetImage = targetImage
+        self.targetImage = self.loadDotImage()
         self.targetMask = pygame.mask.from_surface(self.targetImage)
+
+    def createAnt(self, x, y):
+        self.antList.append(Ant(x, y, self.window, self.board))
+
+    def createTrail(self, x, y, type_):
+        self.trailList.append(Trail(x, y, type_, self.window, self.board))
+
+    def draw(self):
+        for ant in self.antList:
+            ant.draw()
+
+        if DEBUG:
+            for trail in self.trailList:
+                if trail.ttl <= 0:
+                    self.trailList.remove(trail)
+                else:
+                    trail.draw()
+
+    def clearAll(self):
+        self.clearAnts()
+        self.clearTrail()
+
+    def clearAnts(self):
+        self.antList.clear()
+
+    def clearTrail(self):
+        self.trailList.clear()
+
+    def moveAnts(self):
+        for ant in self.antList:
+            ant.move()
+
+            if DEBUG:
+                self.createTrail(ant.x, ant.y, ant.searching)
+
+    def loadAntImage(self):
+        return pygame.image.load('modules/images/ant.png').convert_alpha()
+
+    def loadDotImage(self):
+        return pygame.image.load('modules/images/dot.png').convert_alpha()
+
+class Ant(AntManager):
+    def __init__(self, x, y, window, board):
+        super().__init__(window, board)
+        self.x = x
+        self.y = y
+
+        self.speed = 0.50
+        self.lastDirection = 0
+
+        self.tslthDefault = random.randint(50, 150) # Time since last target hit
 
         self.targetCreationTry = 1
         self.targetPos = self.createTarget()
@@ -98,26 +82,24 @@ class Ant(Sensor):
         self.tslth = self.tslthDefault
 
         self.searching = True
-        self.sensors = [Sensor(self.x, self.y, 0), Sensor(self.x, self.y, 1), Sensor(self.x, self.y, 2)]
+        self.sensors = [Sensor(), Sensor(), Sensor()]
 
-    def draw(self, surface):
-        surface.blit(self.antImage, (self.x, self.y))
+    def draw(self):
+        self.surface.blit(self.antImage, (self.x, self.y))
 
         if DEBUG: 
             # for sensor in self.sensors:
-            #     sensor.draw(surface)
+            #     sensor.draw()
 
-            self.drawTarget(surface)
+            self.drawTarget()
 
-    def drawTarget(self, surface):
-        surface.blit(self.targetImage, self.targetPos)
-        pygame.draw.line(surface, colors['yellow'], (self.x, self.y), self.targetPos, 1)
+    def drawTarget(self):
+        self.surface.blit(self.targetImage, self.targetPos)
+        pygame.draw.line(self.surface, colors['yellow'], (self.x, self.y), self.targetPos, 1)
 
     def setPosition(self, x, y):
         self.x, self.y = x, y
         self.tslth -= 1
-        for sensor in self.sensors:
-            sensor.setPosition(self.x, self.y)
 
     def createTarget(self):
         self.targetCreationTry += 1
@@ -126,10 +108,10 @@ class Ant(Sensor):
         direction = random.randint(0, 3)
         self.lastDirection = direction
 
-        distanceMax = self.distanceMax * (self.targetCreationTry/2)
+        distance = self.distanceMax * (self.targetCreationTry/2)
 
-        distanceX = random.randint(0, distanceMax)
-        distanceY = random.randint(0, distanceMax)
+        distanceX = random.randint(0, distance)
+        distanceY = random.randint(0, distance)
 
         if direction == 0:
             target = (self.x + distanceX, self.y + distanceY)
@@ -181,61 +163,47 @@ class Ant(Sensor):
         self.searching = self.checkSensors()
 
         if self.searching:
-            if int(self.x) == int(self.targetPos[0]) and int(self.y) == int(self.targetPos[1]):
-                self.newTarget()
-            else:
-                self.setPosition(self.x + self.steps[0] * self.speed, self.y + self.steps[1] * self.speed)
-                if self.tslth <= 0: self.newTarget()
+            self.setPosition(self.x + self.steps[0] * self.speed, self.y + self.steps[1] * self.speed)
+            if self.tslth <= 0: self.newTarget()
         else:
             pass
 
         self.checkColission()
 
-class AntManager(Ant, Trail):
-    def __init__(self, window, board):
-        self.window = window
-        self.surface = self.window.surface
-        self.board = board
-
-        self.antList = []
-        self.trailList = []
-
-        self.antImage = self.loadAntImage()
-        self.dotImage = self.loadDotImage()
-
-    def createAnt(self, x, y):
-        self.antList.append(Ant(x, y, self.board, self.antImage, self.dotImage))
-
-    def createTrail(self, x, y, type_):
-        self.trailList.append(Trail(x, y, type_))
+class Sensor():
+    def __init__(self):
+        super().__init__()
 
     def draw(self):
-        for ant in self.antList:
-            ant.draw(self.surface)
+        pygame.draw.rect(self.surface, colors['white'], [self.x, self.y, 0, 0], 5)
 
-        # for trail in self.trailList:
-        #     if trail.ttl <= 0:
-        #         self.trailList.remove(trail)
-        #     else:
-        #         trail.draw(self.surface)
+    def detect(self):
+        pass
 
-    def clearAll(self):
-        self.clearAnts()
-        self.clearTrail()
+class Trail(AntManager):
+    def __init__(self, x, y, type_, window, board):
+        super().__init__(window, board)
+        self.x = x
+        self.y = y
 
-    def clearAnts(self):
-        self.antList.clear()
+        self.strenght = 1
+        self.type = type_
 
-    def clearTrail(self):
-        self.trailList.clear()
+        self.ttlDefault = 50
+        self.ttl = self.ttlDefault
 
-    def moveAnts(self):
-        for ant in self.antList:
-            ant.move()
-            self.createTrail(ant.x, ant.y, ant.searching)
+    def draw(self):
+        if self.type:
+            pygame.draw.rect(self.surface, colors['searchingFood'], [self.x, self.y, 0, 0], self.strenght)
+        else:
+            pygame.draw.rect(self.surface, colors['foundFood'], [self.x, self.y, 0, 0], self.strenght)
 
-    def loadAntImage(self):
-        return pygame.image.load('modules/images/ant.png').convert_alpha()
+        self.ttl -= 1
 
-    def loadDotImage(self):
-        return pygame.image.load('modules/images/dot.png').convert_alpha()
+    def resetTtl(self):
+        self.ttl = self.ttleDefault
+
+    def addStrenght(self):
+        self.strenght += 1
+        self.resetTtl()
+   
