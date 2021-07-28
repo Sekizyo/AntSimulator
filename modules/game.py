@@ -8,8 +8,9 @@ from modules.nest import Nest
 from modules.food import FoodManager
 
 class Game():
-    def __init__(self):
+    def __init__(self, DEBUG):
         self.running = True
+        self.DEBUG = DEBUG
 
         self.window = Window()
         self.surface = self.window.surface
@@ -62,13 +63,16 @@ class Game():
 
 
     def run(self):
+        if self.DEBUG:
+            self.nest.createAnts()
+
         while self.running:
             self.checkControls()
             self.draw()
             self.nest.moveAnts()
             self.clock.tick(self.fps)
 
-def main():
+def main(DEBUG=False):
     pygame.font.init()
-    game = Game()
+    game = Game(DEBUG)
     game.run()

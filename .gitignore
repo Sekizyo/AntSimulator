@@ -4,3 +4,6 @@ lib
 lib64
 modules/__pycache__
 modules/images
+debugging/
+runTest.py
+__pycache__/run.cpython-37.pyc

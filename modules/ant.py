@@ -4,7 +4,7 @@ import math
 
 from modules.colors import colors
 
-DEBUG = True
+DEBUG = False
 
 class Sensor():
     def __init__(self, x, y, id_):
@@ -123,7 +123,7 @@ class Ant(Sensor):
         self.targetCreationTry += 1
         target = (0, 0)
         
-        direction = random.randint(abs(self.lastDirection - random.randint(0, 3)), 3)
+        direction = random.randint(0, 3)
         self.lastDirection = direction
 
         distanceMax = self.distanceMax * (self.targetCreationTry/2)

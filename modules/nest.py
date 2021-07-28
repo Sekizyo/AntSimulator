@@ -10,13 +10,13 @@ class Nest():
         self.antManager = AntManager(self.window, board)
 
         self.x = (self.window.width-300)//2
-        self.y = self.window.height//2
+        self.y = self.window.height//2 - 300
         self.radius = 12
         self.radiusHalf = self.radius/2
 
         self.food = 0
         self.antsLiving = 0
-        self.antSpawnCout = 180
+        self.antSpawnCout = 5000
 
     def draw(self):
         pygame.draw.circle(self.surface, colors['brown'], (self.x, self.y), self.radius)
