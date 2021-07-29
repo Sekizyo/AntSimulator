@@ -4,17 +4,19 @@ import math
 
 from modules.colors import colors
 
-DEBUG = True
+DEBUG = False
 
 class AntManager():
-    def __init__(self, window, board):
+    def __init__(self, window, board, nestRect):
         self.window = window
         self.surface = self.window.surface
         self.board = board
 
         self.antList = []
         self.foodList = []
-        self.trailList = []
+        self.trailFoundFood = []
+
+        self.nestRect = nestRect
 
         self.antImage = self.loadAntImage()
         self.antMask = pygame.mask.from_surface(self.antImage)
@@ -23,22 +25,22 @@ class AntManager():
         self.targetMask = pygame.mask.from_surface(self.targetImage)
 
     def createAnt(self, x, y):
-        self.antList.append(Ant(x, y, self.window, self.board))
+        self.antList.append(Ant(x, y, self.window, self.board, self.nestRect))
 
     def createFood(self, x, y):
-        self.foodList.append(Food(x, y, self.window, self.board))
+        self.foodList.append(Food(x, y, self.window, self.board, self.nestRect))
 
-    def createTrail(self, x, y, type_):
-        self.trailList.append(Trail(x, y, type_, self.window, self.board))
+    def createTrail(self, x, y, searching):
+        if searching == False:
+            self.trailFoundFood.append(Trail(x, y, searching, self.window, self.board, self.nestRect))
 
     def draw(self):
         for ant in self.antList:
             ant.draw()
             self.manageTrailCreation(ant)
 
-        for trail in self.trailList:
-            if DEBUG:
-                trail.draw()
+        for trail in self.trailFoundFood:
+            trail.draw()
             self.manageTrailDeletion(trail)
 
         for food in self.foodList:
@@ -46,8 +48,7 @@ class AntManager():
             self.manageFoodDeletion(food)
 
     def manageFoodDeletion(self, food):
-        if food.strenght >= 2:
-            print('##########')
+        if food.strenght >= 5:
             self.foodList.remove(food)
 
     def manageTrailCreation(self, ant):
@@ -56,7 +57,10 @@ class AntManager():
 
     def manageTrailDeletion(self, trail):
         if trail.ttl <= 0:
-            self.trailList.remove(trail)
+            if trail.type == True:
+                self.trailHome.remove(trail)
+            else:
+                self.trailFoundFood.remove(trail)
 
     def clearAll(self):
         self.clearAnts()
@@ -70,7 +74,7 @@ class AntManager():
 
     def moveAnts(self):
         for ant in self.antList:
-            ant.move(self.foodList, self.trailList)
+            ant.move(self.foodList, self.trailFoundFood)
 
     def loadAntImage(self):
         return pygame.image.load('modules/images/ant.png').convert_alpha()
@@ -79,19 +83,18 @@ class AntManager():
         return pygame.image.load('modules/images/dot.png').convert_alpha()
 
 class Ant(AntManager):
-    def __init__(self, x, y, window, board):
-        super().__init__(window, board)
+    def __init__(self, x, y, window, board, nestRect):
+        super().__init__(window, board, nestRect)
         self.x = x
         self.y = y
 
         self.speed = 0.50
         self.distanceMax = 50
-        self.lastDirection = 0
 
         self.lastTrailDropDefault = 20
         self.lastTrailDrop = 0
 
-        self.tslthDefault = random.randint(50, 150) # Time since last target hit
+        self.tslthDefault = random.randint(125, 150) # Time since last target hit
 
         self.targetCreationTry = 1
         self.targetPos = self.createTarget()
@@ -116,16 +119,24 @@ class Ant(AntManager):
 
     def setPosition(self, x, y):
         self.x, self.y = x, y
-        self.tslth -= 1
+        if self.searching: self.tslth -= 1
         self.sensor.setPosition(x, y)
+
+    def updatePosition(self):
+        self.x += self.steps[0] * self.speed
+        self.y += self.steps[1] * self.speed
+        self.sensor.setPosition(self.x, self.y)
+        self.dropTrail()
+
+        self.tslth -= 1
+        if self.tslth <= 0 and self.searching: self.newTarget()
 
     def createTarget(self):
         self.targetCreationTry += 1
         target = (0, 0)
         
         direction = random.randint(0, 3)
-        self.lastDirection = direction
-        distance = self.distanceMax * (self.targetCreationTry/2)
+        distance = self.distanceMax * (self.targetCreationTry//2)
 
         distanceX = random.randint(0, distance)
         distanceY = random.randint(0, distance)
@@ -177,29 +188,42 @@ class Ant(AntManager):
             self.targetPos = self.createTarget()
 
         self.steps = self.getSteps()
-        self.speed = random.random() + 0.25
+        self.speed = random.random()
         self.tslth = self.tslthDefault
+        self.updatePosition()
 
-    def checkSensors(self, foodList, trailList):
-        target = self.sensor.detect(self.searching, foodList, trailList)
+    def foundFood(self):
+        self.pickedFood = True
+        self.searching = False
 
-        if type(target) == tuple:
+    def deliveredFood(self):
+        self.pickedFood = False
+        self.searching = True
+
+    def checkSensors(self, foodList, trailFoundFood):
+        target, type_ = self.sensor.detect(self.searching, foodList, trailFoundFood, self.nestRect)
+
+        if target == None:
+            return 
+
+        elif type_ == 'food':
+            self.foundFood()
+            self.newTarget((self.nestRect[0], self.nestRect[1]))
+
+        elif type_ == 'nest':
+            self.deliveredFood()
             self.newTarget(target)
-            self.pickedFood = True
-            self.searching = False
 
-        else:
-            self.searching = True
-            return target
+        elif type_ == 'trail':
+            self.followTrail()
 
-    def move(self, foodList, trailList):
-        self.checkSensors(foodList, trailList)
-
-        self.setPosition(self.x + self.steps[0] * self.speed, self.y + self.steps[1] * self.speed)
-        if self.tslth <= 0: self.newTarget()
-
+    def move(self, foodList, trailFoundFood):
+        self.checkSensors(foodList, trailFoundFood)
         self.checkColission()
-        self.dropTrail()
+        self.updatePosition()
+
+    def followTrail(self):
+        pass
 
     def dropTrail(self):
         if self.lastTrailDrop <= 0:
@@ -211,83 +235,85 @@ class Sensor(Ant, AntManager):
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.size = 10
-        self.offset = 2.5
-        self.sizeHalf = self.size//2
 
-        self.topSensor = pygame.Rect((0, 0), (0, 0))
-        self.leftSensor = pygame.Rect((0, 0), (0, 0))
-        self.rightSensor = pygame.Rect((0, 0), (0, 0))
-        self.downSensor = pygame.Rect((0, 0), (0, 0))
+        self.size = 10
+        self.sizeHalf = self.size//2
+        self.offset = 2.5
+
+        self.sensor = pygame.Rect((self.x, self.y), (self.size, self.size))
+        self.lastChoice = None
         
     def setPosition(self, x, y):
         self.x, self.y = x, y
-        self.topSensor = pygame.Rect((self.x-self.sizeHalf+self.offset, self.y-self.size-self.offset), (self.size, self.size))
-        self.leftSensor = pygame.Rect((self.x-self.size-self.offset, self.y-self.offset), (self.size, self.size))
-        self.rightSensor = pygame.Rect((self.x+self.size-self.offset, self.y-self.offset), (self.size, self.size))
-        self.downSensor = pygame.Rect((self.x-self.sizeHalf+self.offset, self.y+self.size-self.offset), (self.size, self.size))
+        self.sensor = pygame.Rect((self.x, self.y), (self.size, self.size))
 
     def draw(self, surface):
-        pygame.draw.rect(surface, colors['searchingFood'], self.topSensor)
-        pygame.draw.rect(surface, colors['searchingFood'], self.leftSensor)
-        pygame.draw.rect(surface, colors['searchingFood'], self.rightSensor)
-        pygame.draw.rect(surface, colors['searchingFood'], self.downSensor)
+        pygame.draw.rect(surface, colors['searchingFood'], self.sensor)
 
-    def detect(self, searchingFood, foodList, trailList):
+    def detect(self, searchingFood, foodList, trailFoundFood, nest):
         if searchingFood:
-            target = self.detectItem(foodList, True)
+            target = self.detectItem(foodList)
+            type_ = 'food'
+
+            if not target:
+                target = self.detectItem(trailFoundFood)
+                type_ = 'trail'
+
         else:
-            target = self.detectItem(trailList)
+            target = self.detectItem([nest], True)
+            type_ = 'nest'
 
-        return target
+        return target, type_
 
-    def detectItem(self, itemList, food=False):
+    def detectItem(self, itemList, nest=False):
         detectedItems = []
         for item in itemList:
-            if self.topSensor.colliderect(item):
+            if self.sensor.colliderect(item):
                 detectedItems.append(item)
 
-            elif self.leftSensor.colliderect(item):
-                detectedItems.append(item)
-
-            elif self.rightSensor.colliderect(item):
-                detectedItems.append(item)
-
-            elif self.downSensor.colliderect(item):
-                detectedItems.append(item)
-
-            if not food:
-                item.addStrenght()
+        if detectedItems and nest:
+            return detectedItems[0]
 
         if detectedItems:
-            strongest = detectedItems[0].strenght
-            stronghestItem = detectedItems[0]
+            colidingList = []
+            testList = self.sensor.collidelistall(detectedItems)
 
-            for detected in detectedItems:
-                if detected.strenght >= strongest:
-                    strongestItem = detected
-                    strongest = strongestItem.strenght
+            for point in testList:
+                colidingList.append(detectedItemspoint) 
 
-            return (strongestItem.x , strongestItem.y)
+            print(f'---- test - {test}')
+            strongestItem = self.getStrongest(detectedItems)
+            return (strongestItem.x , strongestItem.y), 
+
         else:
-            return True
+            return None
+
+    def getStrongest(self, items):
+        strongest = items[0].strenght
+        stronghestItem = items[0]
+
+        for item in items:
+            if item.strenght >= strongest:
+                strongest = item.strenght
+                strongestItem = item
+
+        strongestItem.addStrenght()
+        return strongestItem
 
 class Trail(AntManager):
-    def __init__(self, x, y, type_, window, board):
-        super().__init__(window, board)
+    def __init__(self, x, y, type_, window, board, nestRect):
+        super().__init__(window, board, nestRect)
         self.x = x
         self.y = y
+        self.size = 1
+        self.rect = pygame.Rect((self.x, self.y), (self.size, self.size))
+
+        self.type = type_
 
         self.strenght = 1
 
-        self.interactionsDefault = 100
-        self.interactions = self.interactionsDefault
-
-        self.type = type_
-        self.ttlDefault = 1000
+        self.ttlDefault = 300
         self.ttl = self.ttlDefault
-
-        self.rect = pygame.Rect((self.x, self.y), (2, 2))
 
     def draw(self):
         if self.type:
@@ -297,21 +323,13 @@ class Trail(AntManager):
 
         self.ttl -= 1
 
-    def resetTtl(self):
+    def addStrenght(self):
+        self.strenght += 1
         self.ttl = self.ttlDefault
 
-    def addStrenght(self):
-        if self.interactions <= 0:
-            self.interactions = self.interactionsDefault
-            self.strenght += 1
-            self.rect = pygame.Rect((self.x, self.y), (2, 2))
-            self.resetTtl()
-        else:
-            self.interactions -= 1
-
 class Food(AntManager):
-    def __init__(self, x, y, window, board):
-        super().__init__(window, board)
+    def __init__(self, x, y, window, board, nestRect):
+        super().__init__(window, board, nestRect)
         self.x = x
         self.y = y
 
@@ -328,4 +346,4 @@ class Food(AntManager):
 
     def addStrenght(self):
         self.strenght += 1
-        del self
+
