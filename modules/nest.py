@@ -22,7 +22,7 @@ class Nest():
         self.score = 0
         self.antsLiving = 0
         self.trailDots = 0
-        self.antSpawnCount = 50
+        self.antSpawnCount = 100
 
     def draw(self):
         pygame.draw.rect(self.surface, colors['brown'], self.nestRect)
@@ -34,6 +34,7 @@ class Nest():
 
     def setPosition(self, x, y):
         self.nestX, self.nestY = x, y
+        self.nestRect = pygame.Rect((self.nestX, self.nestY), (self.size, self.size))
 
     def createAnts(self):
         for i in range(self.antSpawnCount):
@@ -48,7 +49,7 @@ class Nest():
         
     def getStats(self):
         self.antsLiving = len(self.antManager.antList)
-        self.trailDots = len(self.antManager.trailFoundFood) + len(self.antManager.trailHome)
+        self.trailDots = len(self.antManager.trailFoundFood)
         self.foodDots = len(self.antManager.foodList)
         return (self.antsLiving, self.trailDots, self.foodDots)
 
