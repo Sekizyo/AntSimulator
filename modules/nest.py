@@ -7,24 +7,28 @@ class Nest():
     def __init__(self, window, board):
         self.window = window
         self.surface = self.window.surface
-        self.antManager = AntManager(self.window, board)
 
-        self.nestX = (self.window.width-300)//2
-        self.nestY = self.window.height//2 - 300
-        self.radius = 12
-        self.radiusHalf = self.radius/2
+        self.nestX = int((self.window.width-300)//2)
+        self.nestY = int(self.window.height//2 - 300)
+
+        self.size = 30
+        self.sizeHalf = self.size//4
+        self.offset = 4
+        self.nestRect = pygame.Rect((self.nestX, self.nestY), (self.size, self.size))
+
+        self.antManager = AntManager(self.window, board, self.nestRect)
 
         self.foodDots = 0
         self.score = 0
         self.antsLiving = 0
         self.trailDots = 0
-        self.antSpawnCout = 1
+        self.antSpawnCount = 50
 
     def draw(self):
-        pygame.draw.circle(self.surface, colors['brown'], (self.nestX, self.nestY), self.radius)
+        pygame.draw.rect(self.surface, colors['brown'], self.nestRect)
         
         textFood = self.window.font.render(f'{self.score}', False, (0, 0, 0))
-        self.surface.blit(textFood,(self.nestX-self.radiusHalf+1, self.nestY-self.radiusHalf-2))
+        self.surface.blit(textFood,(self.nestX+self.sizeHalf+self.offset, self.nestY+self.sizeHalf+self.offset))
 
         self.antManager.draw()
 
@@ -32,12 +36,19 @@ class Nest():
         self.nestX, self.nestY = x, y
 
     def createAnts(self):
-        for i in range(self.antSpawnCout):
+        for i in range(self.antSpawnCount):
             self.antManager.createAnt(self.nestX, self.nestY)
 
+    def killAnts(self):
+        try:
+            for i in range(self.antSpawnCount):
+                self.antManager.antList.pop(0)
+        except:
+            pass
+        
     def getStats(self):
         self.antsLiving = len(self.antManager.antList)
-        self.trailDots = len(self.antManager.trailList)
+        self.trailDots = len(self.antManager.trailFoundFood) + len(self.antManager.trailHome)
         self.foodDots = len(self.antManager.foodList)
         return (self.antsLiving, self.trailDots, self.foodDots)
 
